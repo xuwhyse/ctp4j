@@ -1,0 +1,48 @@
+// java -Xmx2g -jar jnaerator-0.9.5-SNAPSHOT-shaded.jar
+// mkdir -p bridj/classes
+// javac -d bridj/classes -cp bridj:bridj-0.2-SNAPSHOT-shaded.jar bridj/*/*.java
+// ./configure --enable-shared && make clean && make && make install
+
+//-I $(FFMPEG_HOME)
+
+/*
+-library avutil      
+	$(FFMPEG_HOME)/libavutil/rational.h
+	$(FFMPEG_HOME)/libavutil/avutil.h
+	$(FFMPEG_HOME)/libavutil/pixfmt.h
+-library avcodec		$(FFMPEG_HOME)/libavcodec/avcodec.h
+*/
+
+-root com.whyse.lib
+/*
+-library Trader   
+		src/main/resources/lib/headfile/ThostFtdcTraderApi.h
+		src/main/resources/lib/headfile/ThostFtdcUserApiDataType.h
+		src/main/resources/lib/headfile/ThostFtdcUserApiStruct.h
+*/
+
+
+//-library test   src/main/resources/lib/headfile/test1.h
+
+/*
+-library  Trader  src/main/resources/lib/headfile/ThostFtdcUserApiDataType.h
+		   src/main/resources/lib/headfile/ThostFtdcUserApiStruct.h
+		   src/main/resources/lib/headfile/ThostFtdcTraderApi.h
+		    */
+
+		   
+-library  Md  
+	src/main/resources/lib/headfile/ThostFtdcUserApiDataType.h
+	src/main/resources/lib/headfile/ThostFtdcUserApiStruct.h
+	src/main/resources/lib/headfile/ThostFtdcMdApi.h
+
+
+-runtime BridJ
+-mode Directory
+//-reification
+//-scalaStructSetters
+
+//-nocpp 
+//-noJar -noComp
+-o src/main/java
+-v

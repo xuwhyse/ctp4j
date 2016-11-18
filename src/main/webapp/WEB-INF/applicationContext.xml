@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd 
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	http://www.springframework.org/schema/task
+	http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+		
+    <context:component-scan base-package="com.whyse.web.*" />
+    <!-- schema/tx要放在后面 -->
+	<task:annotation-driven/>
+	
+	<!-- 读取配置文件,下面就可以使用  classpath:jdbc.properties-->
+    <context:property-placeholder location="classpath:jdbc.properties" />
+	
+	<!-- 有datasource注入的一般可以直接使用sql语句来执行 
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${mysql.driver}" />
+		<property name="url" value="${mysql.url}" />
+		<property name="username" value="${mysql.username}" />
+		<property name="password" value="${mysql.password}" />
+		<property name="maxActive"  value="5"   />
+        <property name="initialSize"  value="1"  />
+        <property name="maxWait"  value="60000" />
+        <property name="maxIdle"   value="5" />
+        <property name="minIdle"    value="0"  />
+        <property name="removeAbandoned"  value="true" />
+        <property name="removeAbandonedTimeout"  value="120" />
+        <property name="logAbandoned" value="true" />
+		<property name="timeBetweenEvictionRunsMillis" value="120000" />
+		<property name="minEvictableIdleTimeMillis" value="180000" />
+		<property name="numTestsPerEvictionRun"    value="10"  />
+		<property name="testWhileIdle" value="true" />
+		<property name="validationQueryTimeout"  value="1" />
+		<property name="testOnBorrow"  value="false" />
+		<property name="validationQuery" value="select 1" />
+	</bean>
+	
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="dataSource" />
+	</bean>
+	-->
+</beans>

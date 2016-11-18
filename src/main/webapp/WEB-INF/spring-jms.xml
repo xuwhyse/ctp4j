@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:task="http://www.springframework.org/schema/task" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd 
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	http://www.springframework.org/schema/task
+	http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+
+	<!-- 配置JMS连接工厂 -->
+	<bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="failover:(tcp://192.168.4.77:61616)" />
+		<property name="sendTimeout" value="5000" />
+	</bean>
+	<bean id="cachingConnectionFactory"
+		class="org.springframework.jms.connection.CachingConnectionFactory">
+		<property name="targetConnectionFactory" ref="connectionFactory"></property>
+		<!-- Session缓存数量,默认是1，已经比较足够了 -->
+		<property name="sessionCacheSize" value="6"></property>
+	</bean>
+	<!--  
+	<bean id="messageConverter" class="com.common.jms.NotifyMessageConverter">
+	</bean>
+	-->
+
+
+	<!-- Queue队列：仅有一个订阅者会收到消息，消息一旦被处理就不会存在队列中 -->
+	<bean id="notifyQueue" class="org.apache.activemq.command.ActiveMQQueue">
+		<!-- 设置消息队列的名字 -->
+		<constructor-arg value="xmTest"></constructor-arg>
+	</bean>
+	<!-- 配置JMS模板（Queue），Spring提供的JMS工具类，它发送、接收消息。 -->
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<!-- 这边使用了连接缓存池 -->
+		<property name="connectionFactory" ref="cachingConnectionFactory" />
+		<property name="defaultDestination" ref="notifyQueue" />
+		<property name="receiveTimeout" value="5000" />
+	</bean>
+	<!-- 异步接收消息处理类 -->
+	<bean id="queueMessageListener" class="com.whyse.web.jms.activemq.queue.server.QueueMessageListener">
+	</bean>
+	<!-- 消息消费者 一般使用spring的MDP异步接收Queue模式 -->
+	<!-- 消息监听容器 -->
+	<bean id="queueContainer"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="cachingConnectionFactory"></property>
+		<property name="destination" ref="notifyQueue"></property>
+		<property name="messageListener" ref="queueMessageListener"></property>
+		<!-- 三个线程去抢着消费一个消息 -->
+		<property name="concurrentConsumers" value="3" /> 
+	</bean>
+
+	
+	<!-- 目的地：Topic主题 ：放入一个消息，所有订阅者都会收到 -->
+	<!--这个是主题目的地，一对多的 -->
+	<bean id="notifyTopic" class="org.apache.activemq.command.ActiveMQTopic">
+		<constructor-arg value="xmTopic"></constructor-arg>
+	</bean>
+	<!-- 配置JMS模板（Topic），pubSubDomain="true"   这个是用来发送用的-->
+	<bean id="topicJmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="cachingConnectionFactory" />
+		<property name="defaultDestination" ref="notifyTopic" />
+		<property name="receiveTimeout" value="5000" />
+		<property name="pubSubDomain" value="true" />
+	</bean>
+	<!-- 下面写成类，实例化多个就可以订阅多个  -->
+	<bean id="topicMessageListener" class="com.whyse.web.jms.activemq.topic.TopicMessageListener">
+	</bean>
+	<bean id="topicJmsContainer"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="cachingConnectionFactory"></property>
+		<property name="destination" ref="notifyTopic"></property>
+		<property name="messageListener" ref="topicMessageListener"></property>
+		<!-- 这样会有三个订阅者,不同线程 消费同一个消息三次！-->
+		<property name="concurrentConsumers" value="1" /> 
+	</bean>
+
+</beans>

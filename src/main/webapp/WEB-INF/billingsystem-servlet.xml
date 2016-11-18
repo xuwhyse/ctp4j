@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd 
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+		
+    <context:component-scan base-package="com.whyse.web.*" />
+    <context:annotation-config/> 
+
+	<bean id="jacksonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"></bean>
+	 <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<property name="messageConverters">
+		  <list>
+		    <ref bean="jacksonMessageConverter"/>
+		  </list>
+		</property>
+	</bean>
+    
+    <!-- 拦截器 	-->
+    <!-- 
+	<mvc:interceptors>
+	 	
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.billings.billingsystem.interceptor.MessageInterceptor"></bean>
+		</mvc:interceptor>
+		
+	</mvc:interceptors>
+	-->
+	
+	<!-- =====================以上主要是数据源，spring和mybatis结合=========================== -->
+    
+	<bean id="velocityConfigurer" class="org.springframework.web.servlet.view.velocity.VelocityConfigurer">
+	    <!-- 所有htnl资源从value开头开始找 -->
+		<property name="resourceLoaderPath" value="/WEB-INF/velo/"/>
+		<property name= "velocityProperties">      
+			<props>      
+				<prop key="input.encoding">utf-8</prop>      
+				<prop key="output.encoding">utf-8</prop> 	
+			</props>      
+		</property>
+	</bean>
+	 
+	<!-- velocity视图解析器，配置调用java的自定义函数 -->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.velocity.VelocityLayoutViewResolver">
+		<property name="cache" value="false"/>
+		<property name="prefix" value=""/>
+		<property name="suffix" value=".html"/>
+		<property name="layoutUrl" value="layout/layout.html"/>
+		<property name="contentType">
+			<value>text/html;charset=UTF-8</value>
+		</property>
+		<property name="dateToolAttribute"><value>dateTool</value></property>
+		<!-- 注意toolbox.xml里面的实例是否引用到了别的资源 
+		<property name="toolboxConfigLocation" value="/WEB-INF/velo/toolbox.xml" />
+		-->
+		<property name="exposeSpringMacroHelpers" value="true"/>
+		<property name="order">
+			<value>0</value>
+		</property>
+		<!--  这个之前可以当作html解析时的字典，$!{dictCache.getDictNameById($!{item.dictParentId})}整个类可以当作放在map中的实例一样用
+		<property name="attributesMap">
+			<map>
+				<entry key="dictCache" value-ref="dictCache" />
+			</map>
+		</property>
+		 -->
+	</bean>
+	
+	
+</beans>
