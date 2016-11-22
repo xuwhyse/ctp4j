@@ -12,6 +12,7 @@ import com.whyse.lib.md.MdLibrary.THOST_TE_RESUME_TYPE;
 import com.whyse.main.selfmodel.LoginMdBean;
 import com.whyse.md.server.impl.MdMngServiceImpl;
 import com.whyse.md.server.impl.MdServiceImpl;
+import com.whyse.myLiangHua.util.TimeWorker;
 
 public class MDLHHelper {
 
@@ -21,12 +22,12 @@ public class MDLHHelper {
 	public static volatile double[] list10 = new double[4];
 	public static volatile double[] list20 = new double[4];
 	public static volatile double[] list30 = new double[4];
-	static volatile Queue<Double> que34 = new LinkedBlockingQueue<>(34);
+	public static volatile Queue<Double> queMin34 = new LinkedBlockingQueue<>(34);
 	/**
 	 * 用来保存最近不同的报价数据,不同的报价才能被列为参数.
 	 * 调整这个容量参数，可以达到扩容样本的目的
 	 */
-	static volatile Queue<Double> que5 = new LinkedBlockingQueue<>(4);//5显然太大
+	static volatile Queue<Double> que5 = new LinkedBlockingQueue<>(5);//5显然太大
 	static volatile Map<Double, Boolean>  mapQue = new HashMap<Double, Boolean>(10);
 	public static LinkedBlockingQueue<Boolean> blockingQueue = new LinkedBlockingQueue<>(10);// 应该是600，看看会不会溢出任务
 	/**
@@ -38,8 +39,8 @@ public class MDLHHelper {
 	/**
 	 * 量化多空，只做一个品种
 	 */
-//	public static String mainSym = "p1701";//棕榈
-	public static String mainSym = "JM1701";//焦煤
+	public static String mainSym = "p1701";//棕榈
+//	public static String mainSym = "JM1701";//焦煤
 //	public static String mainSym = "RB1701";//螺纹
 	static{
 //		listSym.add("IF1612");
@@ -85,6 +86,10 @@ public class MDLHHelper {
 		//==========================================================================
 		MdServiceImpl mdServiceImpl = MdMngServiceImpl.newMDService(loginBean,listSym);
 		newConsumerEventJS("计算均线"+mainSym);
+		TimeWorker.initCYTimeWorker1();
+		TimeWorker.savePerHour(queMin34);
+		TimeWorker.tryReadQueMin(queMin34);
+		count = queMin34.size();
 //		mdServiceImpl = MdMngServiceImpl.getMDService("brokerId","userId");
 		
 	}
@@ -101,7 +106,7 @@ public class MDLHHelper {
 						//------这边开始计算均线是否OK-------------
 						if(count>=34){
 							Double[]  temp = new Double[34];
-							temp = que34.toArray(temp);
+							temp = queMin34.toArray(temp);
 							updateJS(temp);
 							//------交易策略制定，等或者行动-------
 							TraderLHOptImport.doOrNot();
@@ -142,31 +147,39 @@ public class MDLHHelper {
 	}
 
 	/**
-	 * 拿到订阅的主数据后，进行量化计算行程策略
+	 * 只管存最新的5挡行情
 	 * @param mapData
 	 * author:xumin 
 	 * 2016-11-16 下午4:20:55
 	 */
 	public static void optData(Map<String, Object> mapData) {
-		// TODO LastPrice
-		//去重
 		LastMdMap = mapData;
 		LastPrice = (Double) LastMdMap.get("LastPrice");
-		if(mapQue.containsKey(LastPrice)){
-			return;
-		}else{
-			mapQue.put(LastPrice, true);
-			if(!que5.offer(LastPrice)){
-				//如果队列满，则去除最先进来的，然后清空它的key值,然后再插入
-				Double keyWillR = que5.poll();
-				que5.offer(LastPrice);
-				mapQue.remove(keyWillR);
-			}
-		}
-		lastPriceInQueue(que34,LastPrice);
+		lastPriceInQueue(que5,LastPrice);//最新数据入队列
+	}
+	/**
+	 * 每分钟被调用一次，记录过去一分钟的收盘价格
+	 * author:xumin 
+	 * 2016-11-22 下午7:59:59
+	 */
+	public static void miniteWriteEvent() {
+		Double pjPrice = getPJPrice(que5,5);
+		lastPriceInQueue(queMin34,pjPrice);//每分钟的最后均价
+		count++;
 		//==========行情更新不能阻塞=====================
 		blockingQueue.add(true);//发送行情更新的消息
 	}
+
+	private static Double getPJPrice(Queue<Double> que, int size) {
+		Double[]  temp = new Double[size];
+		temp = que.toArray(temp);
+		int s = temp.length;
+		double total = 0;
+		for(double dd : temp)
+			total+=dd;
+		return total/s;
+	}
+
 	/**
 	 * 讲最新数据插入队列，如果队列满，则消费首位之后再入队列
 	 * @param que
@@ -174,14 +187,13 @@ public class MDLHHelper {
 	 * author:xumin 
 	 * 2016-11-17 上午11:02:14
 	 */
-	private static void lastPriceInQueue(Queue<Double> que, Double price) {
-		if(count<=34)
-			++count;
+	public static void lastPriceInQueue(Queue<Double> que, Double price) {
 		if(!que.offer(price)){
 			//如果队列满，则取出队首再插入
 			que.poll();//取出并丢弃
 			que.add(price);
 		}
 	}
+	
 
 }

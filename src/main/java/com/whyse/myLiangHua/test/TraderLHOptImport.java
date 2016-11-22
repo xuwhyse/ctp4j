@@ -122,7 +122,7 @@ public class TraderLHOptImport {
 	 * 2016-11-18 下午4:41:01
 	 */
 	private static void doAction(int flag,double price) {
-		TraderHelper.enterOrder(flag,price);
+//		TraderHelper.enterOrder(flag,price);
 	}
 	private static void printLastPrice() {
 		Double[] array = new Double[5];
