@@ -1,7 +1,7 @@
-package com.whyse.myLiangHua.test;
+package com.whyse.myLiangHua.real;
 
 
-public class LHTestMain {
+public class LHMain {
 
 	/**
 	 * @param args
@@ -10,10 +10,10 @@ public class LHTestMain {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws InterruptedException {
-		MDLHHelper.initMyMD();
+		MDLHClientMngImpl.initMyMD();
 		Thread.sleep(4000);
 		TraderHelper.initMyTrader();
-		System.err.println("");
+//		System.err.println("");
 	}
 
 }

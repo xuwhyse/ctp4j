@@ -8,6 +8,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.bridj.Pointer;
 
 import com.whyse.lib.md.CThostFtdcDepthMarketDataField;
+import com.whyse.myLiangHua.real.MDLHClientMngImpl;
 import com.whyse.myLiangHua.test.MDLHHelper;
 
 public class MarketDataHelp {
@@ -105,8 +106,9 @@ public class MarketDataHelp {
 						Map<String, Object> mapData = mapMD.get(item);
 						mapMDWorker.remove(item);// 从拿到最新数据开始，算作这次已经处理
 						// TODO---拿到数据的线程需要做的事情----------
-						MDLHHelper.optData(mapData);
-//						System.out.println("消费数据:"+mapData);
+//						MDLHHelper.optData(mapData);
+						MDLHClientMngImpl.optData(mapData,item);
+//						System.out.println("消费数据:"+item);
 //						Thread.sleep(500);
 					} catch (Exception e) {
 						e.printStackTrace();

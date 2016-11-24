@@ -42,6 +42,9 @@ public class TestMd {
 		List<String> list = new ArrayList<>(1);
 //		list.add("IF1612");
 		list.add("rb1701");
+		list.add("p1701");
+		list.add("JM1701");
+//		list.add("RB1701");
 		//==========================================================================
 		MdServiceImpl mdServiceImpl = MdMngServiceImpl.newMDService(loginBean,list);
 		

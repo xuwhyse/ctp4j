@@ -1,5 +1,6 @@
-package com.whyse.myLiangHua.test;
+package com.whyse.myLiangHua.real;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,44 +8,46 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.whyse.lib.md.CThostFtdcReqUserLoginField;
-import com.whyse.lib.md.MdLibrary.THOST_TE_RESUME_TYPE;
-import com.whyse.main.selfmodel.LoginMdBean;
-import com.whyse.md.server.impl.MdMngServiceImpl;
-import com.whyse.md.server.impl.MdServiceImpl;
+import com.alibaba.fastjson.JSON;
+import com.whyse.myLiangHua.util.FileUtils;
 
-public class MDLHHelper {
+public class MDLHClientImpl {
 
-	static List<String> listSym = new ArrayList<>(2);
-	static volatile int count = 0;
-	public static volatile double[] list5 = new double[4];
-	public static volatile double[] list10 = new double[4];
-	public static volatile double[] list20 = new double[4];
-	public static volatile double[] list30 = new double[4];
-	public static volatile Queue<Double> queMin34 = new LinkedBlockingQueue<>(34);
+	static final String qihuoMinLinePath = "G:/lianghua/qihuo/";
+	volatile int count = 0;
+	public volatile double[] list5 = new double[4];
+	public volatile double[] list10 = new double[4];
+	public volatile double[] list20 = new double[4];
+	public volatile double[] list30 = new double[4];
+	public volatile Queue<Double> queMin34 = new LinkedBlockingQueue<>(34);
+	private int sizeP = 3;
 	/**
 	 * 用来保存最近不同的报价数据,不同的报价才能被列为参数.
 	 * 调整这个容量参数，可以达到扩容样本的目的
 	 */
-	static volatile Queue<Double> que5 = new LinkedBlockingQueue<>(5);//5显然太大
-	static volatile Map<Double, Boolean>  mapQue = new HashMap<Double, Boolean>(10);
-	public static LinkedBlockingQueue<Boolean> blockingQueue = new LinkedBlockingQueue<>(10);// 应该是600，看看会不会溢出任务
+	volatile Queue<Double> que5 = new LinkedBlockingQueue<>(sizeP);//5显然太大
+	volatile Map<Double, Boolean>  mapQue = new HashMap<Double, Boolean>(10);
+	public  LinkedBlockingQueue<Boolean> blockingQueue = new LinkedBlockingQueue<>(10);// 应该是600，看看会不会溢出任务
 	/**
 	 * 获取到的最新报价
 	 */
-	static volatile double LastPrice;
-	static volatile double LastPriceOlder=0;
-	public static volatile Map<String, Object> LastMdMap;
+	volatile double LastPrice;
+	volatile double LastPriceOlder=0;
+	public volatile Map<String, Object> LastMdMap;
+	TraderLHOptImportReal  traderLHOptImportReal;
 	/**
 	 * 量化多空，只做一个品种
 	 */
-	public static String mainSym = "p1701";//棕榈
+	public String mainSym = "";//棕榈
+	
 //	public static String mainSym = "JM1701";//焦煤
 //	public static String mainSym = "RB1701";//螺纹
-	static{
-//		listSym.add("IF1612");
-		listSym.add(mainSym);
+	public MDLHClientImpl(String sym) {
+		mainSym = sym;
+		traderLHOptImportReal = new TraderLHOptImportReal(this);
+		init();
 	}
+
 	//================================================================
 	/**
 	 * @param args
@@ -52,7 +55,6 @@ public class MDLHHelper {
 	 * 2016-11-15 下午5:01:09
 	 */
 	public static void main(String[] args) {
-		initMyMD();
 //		long beg = System.currentTimeMillis();
 //		for(int i=1;i<66;i++)
 //			lastPriceInQueue(que34, i*1.0);
@@ -62,39 +64,34 @@ public class MDLHHelper {
 //		System.err.println(System.currentTimeMillis()-beg);
 	}
 
-	@SuppressWarnings("unused")
-	public static void initMyMD() {
-		LoginMdBean.setLocalFilePath("C:/ctpfile/md/");
-		LoginMdBean loginBean = new LoginMdBean();
-		CThostFtdcReqUserLoginField req = new CThostFtdcReqUserLoginField();
-		//经纪公司代码
-		req.BrokerID().setCString("7090");
-		//****** + 825020   ;;;  81002445 +108652
-		req.UserID().setCString("81002445");
-		req.Password().setCString("108652");//行情：825020  交易、资金 538308
-		req.UserProductInfo().setCString("ftdv1");
-		loginBean.setReq(req);
-		
-		loginBean.setFrontUrl("tcp://180.169.75.19:41213");//实时行情的接口41213
-		loginBean.setPrivateTopic(THOST_TE_RESUME_TYPE.THOST_TERT_QUICK);
-		loginBean.setPublicTopic(THOST_TE_RESUME_TYPE.THOST_TERT_QUICK);
-		
-//		List<String> list = new ArrayList<>(1);
-//		list.add("IF1612");
-//		list.add("rb1701");
+	public  void init() {
 		//==========================================================================
-		MdServiceImpl mdServiceImpl = MdMngServiceImpl.newMDService(loginBean,listSym);
-		newConsumerEventJS("计算均线"+mainSym);
-		TimeWorker.initCYTimeWorker1();
-		TimeWorker.savePerHour();
-		TimeWorker.tryReadQueMin(queMin34);
+		tryReadQueMin();
 		count = queMin34.size();
-//		mdServiceImpl = MdMngServiceImpl.getMDService("brokerId","userId");
-		
+		newConsumerEventJS("计算均线"+mainSym);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void tryReadQueMin() {
+		try{
+			String path = getPathSym();
+			String str = FileUtils.readFileAll(path);
+			List<Double> listT = new ArrayList<Double>(40);
+			listT = JSON.parseObject(str, listT.getClass());//这个是读取用的
+			for(int i=0;i<listT.size();i++){
+				lastPriceInQueue(queMin34,listT.get(i));
+			}
+		}catch(Exception e){
+			
+		}
+	}
+
+	private String getPathSym() {
+		return qihuoMinLinePath+mainSym+"_minLine";
 	}
 
 	//=====================================================================
-	private static void newConsumerEventJS(String name) {
+	public void newConsumerEventJS(String name) {
 		Runnable run = new Runnable() {
 
 			@Override
@@ -108,7 +105,7 @@ public class MDLHHelper {
 							temp = queMin34.toArray(temp);
 							updateJS(temp);
 							//------交易策略制定，等或者行动-------
-							TraderLHOptImport.doOrNot();
+							traderLHOptImportReal.doOrNot();
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -128,7 +125,7 @@ public class MDLHHelper {
 	 * 2016-11-17 下午4:09:45
 	 * @param temp 
 	 */
-	protected static void updateJS(Double[] temp) {
+	protected void updateJS(Double[] temp) {
 		for(int i=33,j=0;i>29;i--,j++)
 			list5[j] = (temp[i]+temp[i-1]+temp[i-2]+temp[i-3]+temp[i-4])/5;
 		
@@ -151,7 +148,7 @@ public class MDLHHelper {
 	 * author:xumin 
 	 * 2016-11-16 下午4:20:55
 	 */
-	public static void optData(Map<String, Object> mapData) {
+	public void optData(Map<String, Object> mapData) {
 		LastMdMap = mapData;
 		LastPrice = (Double) LastMdMap.get("LastPrice");
 		lastPriceInQueue(que5,LastPrice);//最新数据入队列
@@ -161,12 +158,12 @@ public class MDLHHelper {
 	 * author:xumin 
 	 * 2016-11-22 下午7:59:59
 	 */
-	public static void miniteWriteEvent() {
-		Double pjPrice = getPJPrice(que5,5);
+	public void miniteWriteEvent() {
+		Double pjPrice = getPJPrice(que5,sizeP );
 		lastPriceInQueue(queMin34,pjPrice);//每分钟的最后均价
 		count++;
 		//==========行情更新不能阻塞=====================
-		blockingQueue.add(true);//发送行情更新的消息
+		blockingQueue.add(true);//发送行情更新的消息----一分钟执行一次--
 	}
 
 	private static Double getPJPrice(Queue<Double> que, int size) {
@@ -176,22 +173,28 @@ public class MDLHHelper {
 		double total = 0;
 		for(double dd : temp)
 			total+=dd;
-		return total/s;
+		double target = total/s;
+		BigDecimal bd = new BigDecimal(target);  
+		return bd.setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 
 	/**
 	 * 讲最新数据插入队列，如果队列满，则消费首位之后再入队列
-	 * @param que
-	 * @param price
-	 * author:xumin 
-	 * 2016-11-17 上午11:02:14
+	 * @param price 
+	 * @param que 
 	 */
-	public static void lastPriceInQueue(Queue<Double> que, Double price) {
+	public static void lastPriceInQueue(Queue<Double> que, double price) {
 		if(!que.offer(price)){
 			//如果队列满，则取出队首再插入
 			que.poll();//取出并丢弃
 			que.add(price);
 		}
+	}
+
+	public void saveToFile() {
+		String str = JSON.toJSONString(queMin34);
+		String path = getPathSym();
+		FileUtils.writeToFileAll(str,path);
 	}
 	
 

@@ -1,4 +1,4 @@
-package com.whyse.myLiangHua.util;
+package com.whyse.myLiangHua.test;
 
 import java.util.Queue;
 import java.util.concurrent.Executors;
@@ -7,12 +7,10 @@ import java.util.concurrent.TimeUnit;
 
 
 import com.alibaba.fastjson.JSON;
-import com.whyse.myLiangHua.test.MDLHHelper;
+import com.whyse.myLiangHua.util.FileUtils;
 
 public class TimeWorker {
 
-	static ScheduledExecutorService service = Executors.newScheduledThreadPool(2);
-//			.newSingleThreadScheduledExecutor();
 	static String qihuoMinLinePath = "G:/lianghua/qihuo/qihuoMinLine";
 
 	/**
@@ -35,18 +33,23 @@ public class TimeWorker {
 			public void run() {
 				// task to run goes here
 				MDLHHelper.miniteWriteEvent();
+				saveToFile(MDLHHelper.queMin34);
+				System.err.println("每分s钟执行");
 			}
 		};
 		// 第二个参数为首次执行的延时时间，第三个参数为定时执行的间隔时间
+		ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 		service.scheduleAtFixedRate(runnable, 6, 60, TimeUnit.SECONDS);
 	}
 
-	public static void savePerHour(final Queue<Double> queMin34) {
+	public static void savePerHour() {
 		Runnable runnable = new Runnable() {
 			public void run() {
-				saveToFile(queMin34);
+				saveToFile(MDLHHelper.queMin34);
+				System.err.println("每小时执行");
 			}
 		};
+		ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 		service.scheduleAtFixedRate(runnable, 1, 60, TimeUnit.MINUTES);
 	}
 	/**
