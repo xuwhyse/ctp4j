@@ -1,5 +1,6 @@
 package com.whyse.md.server.impl;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,7 +43,13 @@ public class MdServiceImpl {
 		this.listSub = listSub;
 		brokerId = loginMdBean.getReq().BrokerID().getCString();
 		userId = loginMdBean.getReq().UserID().getCString();
-		String mdPath = LoginMdBean.getLocalFilePath();//存放tradepai地方的地址+
+		String mdPath = LoginMdBean.getLocalFilePath()+brokerId+"/"+userId+"/";//后面这个符号很重要
+		
+		//如果没有这个文件夹就会报错！！
+		File localFiles = new File(mdPath);
+		if ( !localFiles.exists() ) {
+			localFiles.mkdirs();
+		}
 		
 		Pointer<CThostFtdcMdApi> pMdApi = CThostFtdcMdApi.CreateFtdcMdApi(BridjUtils.stringToBytePointer(mdPath),false, false);
 		mdApi = pMdApi.get();
