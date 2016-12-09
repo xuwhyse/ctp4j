@@ -71,8 +71,9 @@ public class MDLHClientMngImpl {
 		//==========================================================================
 		MdServiceImpl mdServiceImpl = MdMngServiceImpl.newMDService(loginBean,listSym);
 		
-		TimeWorkerReal.initCYTimeWorker1();
-		TimeWorkerReal.savePerHour();
+//		TimeWorkerReal.initCYTimeWorker1();
+		TimeWorkerReal.initSelfTimeWorker(30);
+//		TimeWorkerReal.savePerHour();
 	}
 
 	/**

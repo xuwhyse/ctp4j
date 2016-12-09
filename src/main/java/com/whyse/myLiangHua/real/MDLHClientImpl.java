@@ -13,6 +13,12 @@ import com.whyse.myLiangHua.util.FileUtils;
 
 public class MDLHClientImpl {
 
+	public double[] listSelfHalfMin = new double[1000];
+	/**
+	 * listSelfHalfMin 的size,下标所对应可以赋值
+	 */
+	public volatile int index = 0;
+	//---------------------------------
 	static final String qihuoMinLinePath = "G:/lianghua/qihuo/";
 	volatile int count = 0;
 	public volatile double[] list5 = new double[4];
@@ -27,7 +33,7 @@ public class MDLHClientImpl {
 	 */
 	volatile Queue<Double> que5 = new LinkedBlockingQueue<>(sizeP);//5显然太大
 	volatile Map<Double, Boolean>  mapQue = new HashMap<Double, Boolean>(10);
-	public  LinkedBlockingQueue<Boolean> blockingQueue = new LinkedBlockingQueue<>(10);// 应该是600，看看会不会溢出任务
+	public  LinkedBlockingQueue<Integer> blockingQueue = new LinkedBlockingQueue<>(10);// 应该是600，看看会不会溢出任务
 	/**
 	 * 获取到的最新报价
 	 */
@@ -98,14 +104,21 @@ public class MDLHClientImpl {
 			public void run() {
 				while (true) {
 					try {
-						blockingQueue.take();
-						//------这边开始计算均线是否OK-------------
-						if(count>=34){
-							Double[]  temp = new Double[34];
-							temp = queMin34.toArray(temp);
-							updateJS(temp);
-							//------交易策略制定，等或者行动-------
-							traderLHOptImportReal.doOrNot();
+						int flag = blockingQueue.take();
+						if(flag==1){
+							//------这边开始计算均线是否OK-------------
+							if(count>=34){
+								Double[]  temp = new Double[34];
+								temp = queMin34.toArray(temp);
+								updateJS(temp);
+								//------交易策略制定，等或者行动-------
+								traderLHOptImportReal.doOrNot();
+							}
+						}
+						if(flag==2){
+							//---抽样点累加计算---------
+							if(index>=88)
+								traderLHOptImportReal.optLeve2();
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -163,7 +176,18 @@ public class MDLHClientImpl {
 		lastPriceInQueue(queMin34,pjPrice);//每分钟的最后均价
 		count++;
 		//==========行情更新不能阻塞=====================
-		blockingQueue.add(true);//发送行情更新的消息----一分钟执行一次--
+		blockingQueue.add(1);//发送行情更新的消息----一分钟执行一次--
+	}
+	/**
+	 * 自定义时间记录的
+	 * author:xumin 
+	 * 2016-11-30 上午11:45:55
+	 */
+	public void initSelfTimeWorkerEvent() {
+		listSelfHalfMin[index] = LastPrice;
+		++index;
+		//==========行情更新不能阻塞=====================
+		blockingQueue.add(2);//发送行情更新的消息----一分钟执行一次--
 	}
 
 	private static Double getPJPrice(Queue<Double> que, int size) {
@@ -196,6 +220,8 @@ public class MDLHClientImpl {
 		String path = getPathSym();
 		FileUtils.writeToFileAll(str,path);
 	}
+
+	
 	
 
 }

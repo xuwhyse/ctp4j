@@ -76,7 +76,7 @@ public class MarketDataHelp {
 		//不过每个线程产生的InstrumentID是循环有序的,不用锁也能保持同步
 		String InstrumentID = mapRT.get("InstrumentID").toString();
 		if (mapMDWorker.containsKey(InstrumentID)) {
-			System.err.println("队列还有未执行，阻挡:" + InstrumentID);
+//			System.err.println("队列还有未执行，阻挡:" + InstrumentID);
 			return -1;
 		} else {
 			mapMDWorker.put(InstrumentID, true);

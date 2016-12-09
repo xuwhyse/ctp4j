@@ -43,13 +43,14 @@ public class TimeWorkerReal {
 						MDLHClientImpl item = MDLHClientMngImpl.mapClient.get(sym);
 						item.miniteWriteEvent();
 					}
+//					System.err.println("交易时间每分s钟执行");
 				}
 //				System.err.println("每分s钟执行");
 			}
 		};
 		// 第二个参数为首次执行的延时时间，第三个参数为定时执行的间隔时间
 		ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
-		service.scheduleAtFixedRate(runnable, 6, 60, TimeUnit.SECONDS);
+		service.scheduleAtFixedRate(runnable, 3, 60, TimeUnit.SECONDS);
 	}
 
 	protected static boolean isJYTime() {
@@ -72,7 +73,26 @@ public class TimeWorkerReal {
 			}
 		};
 		ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
-		service.scheduleAtFixedRate(runnable, 1, 60, TimeUnit.MINUTES);
+		service.scheduleAtFixedRate(runnable, 1, 30, TimeUnit.MINUTES);
+	}
+
+	public static void initSelfTimeWorker(int time) {
+		Runnable runnable = new Runnable() {
+			public void run() {
+				if(isJYTime()){
+					//------交易时间才触发每分钟执行-------
+					for(String sym : MDLHClientMngImpl.listSym){
+						MDLHClientImpl item = MDLHClientMngImpl.mapClient.get(sym);
+						item.initSelfTimeWorkerEvent();
+					}
+//					System.err.println("交易时间每分s钟执行");
+				}
+//				System.err.println("每分s钟执行");
+			}
+		};
+		// 第二个参数为首次执行的延时时间，第三个参数为定时执行的间隔时间
+		ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+		service.scheduleAtFixedRate(runnable, 5, time, TimeUnit.SECONDS);
 	}
 
 }
